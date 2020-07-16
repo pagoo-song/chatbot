@@ -117,7 +117,7 @@ class ChatDataset(gluon.data.Dataset):
             remains = self.max_len - q_len
             a_len = remains
             a_toked = a_toked[-a_len:]
-            #assert a_len == len(a_toked)
+            assert a_len == len(a_toked)
         # [mask, mask, ...., mask, ..., <bos>,..A.. <eos>, <pad>....]
         labels = [
             self.maskt,
@@ -156,7 +156,7 @@ def train():
     model, vocab = get_mxnet_kogpt2_model(ctx=ctx)
     # tok = SentencepieceTokenizer(tok_path, num_best=0, alpha=0)
 
-    data = pd.read_csv('Chatbot_data/ChatbotData.csv')
+    data = pd.read_csv('Chatbot_data/ChatbotData1.csv')
 
     max_len = opt.max_seq_len
     train_set = ChatDataset(data, tok_path, vocab, max_len=max_len)
