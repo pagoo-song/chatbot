@@ -70,7 +70,7 @@ SENT = '<unused1>'
 
 
 class ChatDataset(gluon.data.Dataset):
-    def __init__(self, chats, tok_path, vocab, max_len=44):
+    def __init__(self, chats, tok_path, vocab, max_len=64):
         self._data = chats
         self._tok_path = tok_path
         self.tokenizer = None
