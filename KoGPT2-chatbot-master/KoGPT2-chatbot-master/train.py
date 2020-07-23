@@ -20,7 +20,7 @@ parser.add_argument('--num-epoch',
 
 parser.add_argument('--max-seq-len',
                     type=int,
-                    default=32,
+                    default=64,
                     help='max sentence length on input (default: 32)')
 
 parser.add_argument('--batch-size',
@@ -70,7 +70,7 @@ SENT = '<unused1>'
 
 
 class ChatDataset(gluon.data.Dataset):
-    def __init__(self, chats, tok_path, vocab, max_len=128):
+    def __init__(self, chats, tok_path, vocab, max_len=64):
         self._data = chats
         self._tok_path = tok_path
         self.tokenizer = None
