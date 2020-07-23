@@ -117,7 +117,7 @@ class ChatDataset(gluon.data.Dataset):
             remains = self.max_len - q_len
             a_len = remains
             a_toked = a_toked[-a_len:]
-            # assert a_len == len(a_toked)
+            assert a_len == len(a_toked)
         # [mask, mask, ...., mask, ..., <bos>,..A.. <eos>, <pad>....]
         labels = [
             self.maskt,
