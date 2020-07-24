@@ -6,12 +6,12 @@ import gluonnlp as nlp
 import mxnet as mx
 import pandas as pd
 from gluonnlp.data import SentencepieceTokenizer
-from kogpt2.mxnet_kogpt2 import get_mxnet_kogpt2_model
-from kogpt2.utils import get_tokenizer
+from kobert.mxnet_kobert import get_mxnet_kobert_model
+from kobert.utils import get_tokenizer
 from mxnet import gluon, nd
 from mxnet.gluon import nn
 
-parser = argparse.ArgumentParser(description='Simsimi based on KoGPT-2')
+parser = argparse.ArgumentParser(description='Simsimi based on KoBERT')
 
 parser.add_argument('--num-epoch',
                     type=int,
@@ -41,7 +41,7 @@ parser.add_argument('--sentiment',
 
 parser.add_argument('--model_params',
                     type=str,
-                    default='kogpt2_chat.params',
+                    default='kobert_chat.params',
                     help='model binary for starting chat')
 
 parser.add_argument('--train',
@@ -134,10 +134,10 @@ class ChatDataset(gluon.data.Dataset):
                 self.padder(self.vocab[labels]))
 
 
-class KoGPT2Chat(nn.HybridBlock):
+class KoBERTChat(nn.HybridBlock):
     def __init__(self, kogpt2, prefix=None, params=None):
-        super(KoGPT2Chat, self).__init__(prefix=prefix, params=params)
-        self.kogpt2 = kogpt2
+        super(KoBERTChat, self).__init__(prefix=prefix, params=params)
+        self.kobert = kobert
 
     def hybrid_forward(self, F, inputs):
         # (batch, seq_len, hiddens)
@@ -153,7 +153,7 @@ else:
 
 def train():
     tok_path = get_tokenizer()
-    model, vocab = get_mxnet_kogpt2_model(ctx=ctx)
+    model, vocab = get_mxnet_kobert_model(ctx=ctx)
     # tok = SentencepieceTokenizer(tok_path, num_best=0, alpha=0)
 
     data = pd.read_csv('Chatbot_data/ChatbotData.csv')
@@ -166,8 +166,8 @@ def train():
                                                 batch_size=batch_size,
                                                 num_workers=5,
                                                 shuffle=True)
-    kogptqa = KoGPT2Chat(model)
-    kogptqa.hybridize()
+    kobertqa = KoBERTChat(model)
+    kobertqa.hybridize()
 
     # softmax cross entropy loss for classification
     loss_function = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -175,16 +175,16 @@ def train():
 
     num_epochs = opt.num_epoch
     lr = 5e-5
-    trainer = gluon.Trainer(kogptqa.collect_params(), 'bertadam', {
+    trainer = gluon.Trainer(kobertqa.collect_params(), 'bertadam', {
         'learning_rate': lr,
         'epsilon': 1e-8,
         'wd': 0.01
     })
     # LayerNorm과 Bias에는 Weight Decay를 적용하지 않는다.
-    for _, v in kogptqa.collect_params('.*beta|.*gamma|.*bias').items():
+    for _, v in kobertqa.collect_params('.*beta|.*gamma|.*bias').items():
         v.wd_mult = 0.0
     params = [
-        p for p in kogptqa.collect_params().values() if p.grad_req != 'null'
+        p for p in kobertqa.collect_params().values() if p.grad_req != 'null'
     ]
     # learning rate warmup
     accumulate = opt.accumulate
@@ -220,7 +220,7 @@ def train():
                 mask = mask.as_in_context(ctx)
                 label = label.as_in_context(ctx)
                 # forward computation
-                out = kogptqa(token_ids)
+                out = kobertqa(token_ids)
                 masked_out = nd.where(
                     mask.expand_dims(axis=2).repeat(repeats=out.shape[2],
                                                     axis=2), out,
@@ -246,15 +246,15 @@ def train():
                             math.exp(step_loss / log_interval)))
                 step_loss = 0
     logging.info('saving model file to {}'.format(opt.model_params))
-    kogptqa.save_parameters(opt.model_params)
+    kobertqa.save_parameters(opt.model_params)
 
 
 def chat(model_params, sent='0'):
     tok_path = get_tokenizer()
-    model, vocab = get_mxnet_kogpt2_model(ctx=ctx)
+    model, vocab = get_mxnet_kobert_model(ctx=ctx)
     tok = SentencepieceTokenizer(tok_path, num_best=0, alpha=0)
-    kogptqa = KoGPT2Chat(model)
-    kogptqa.load_parameters(model_params, ctx=ctx)
+    kobertqa = KoBERTChat(model)
+    kobertqa.load_parameters(model_params, ctx=ctx)
     sent_tokens = tok(sent)
     while 1:
         q = input('user > ').strip()
@@ -268,7 +268,7 @@ def chat(model_params, sent='0'):
                                     vocab[EOS, SENT] + vocab[sent_tokens] +
                                     vocab[EOS, S_TKN] +
                                     vocab[a_tok]).expand_dims(axis=0)
-            pred = kogptqa(input_ids.as_in_context(ctx))
+            pred = kobertqa(input_ids.as_in_context(ctx))
             gen = vocab.to_tokens(
                 mx.nd.argmax(
                     pred,
