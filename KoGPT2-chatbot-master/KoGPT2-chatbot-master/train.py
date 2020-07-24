@@ -135,13 +135,13 @@ class ChatDataset(gluon.data.Dataset):
 
 
 class KoBERTChat(nn.HybridBlock):
-    def __init__(self, kogpt2, prefix=None, params=None):
+    def __init__(self, kobert, prefix=None, params=None):
         super(KoBERTChat, self).__init__(prefix=prefix, params=params)
         self.kobert = kobert
 
     def hybrid_forward(self, F, inputs):
         # (batch, seq_len, hiddens)
-        output, _ = self.kogpt2(inputs)
+        output, _ = self.kobert(inputs)
         return output
 
 
@@ -194,7 +194,7 @@ def train():
     warmup_ratio = 0.1
     num_warmup_steps = int(num_train_steps * warmup_ratio)
     step_num = 0
-    all_model_params = kogptqa.collect_params()
+    all_model_params = kobertqa.collect_params()
 
     log_interval = 50
     neg = -1e18
