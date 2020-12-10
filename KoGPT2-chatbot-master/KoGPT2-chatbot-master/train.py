@@ -263,7 +263,7 @@ def chat(model_params, sent='0'):
     kogptqa.load_parameters(model_params, ctx=ctx)
     sent_tokens = tok(sent)
     while 1:
-        q = input('user > ').strip()
+        q = input('고객 > ').strip()
         if q == 'quit':
             break
         q_tok = tok(q)
@@ -283,7 +283,7 @@ def chat(model_params, sent='0'):
                 break
             a += gen.replace('▁', ' ')
             a_tok = tok(a)
-        print("Simsimi > {}".format(a.strip()))
+        print("카페봇 > {}".format(a.strip()))
 
 
 if __name__ == "__main__":
